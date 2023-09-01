@@ -152,11 +152,7 @@ const getObject = async (Contents) => {
   })
 }
 
-/**
- * This will get list of objects in the bucket.
- * while loop will run until we finish reading all the objects from the bucket. 
- * This will run in batch based on the given input. Please check lib.js file. 
-*/
+
 const getS3ObjectsInBucket = async () => {
   try {
     const listObjectsV2Command = configs.getListObjectsV2CommandAws();
