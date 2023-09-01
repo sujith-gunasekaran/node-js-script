@@ -5,6 +5,12 @@
 
 This script will fetch list of objects from the bucket and will check HTML and JS file to see if the file has old crayons CDN link. If the file as old crayons CDN link then this will be replaced with the new CDN link and will upload the modified file to the S3 bucket. 
 
+To Install the package
+
+```
+yarn install
+```
+
 
 This will fetch all the objects from the bucket.
 
