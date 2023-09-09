@@ -30,14 +30,11 @@ const handleJsFile = (content, path) => {
   Object.entries(crayonsLink).forEach(([key, value]) => {
     if(content.includes(key)) {
       fileModified = true;
-      modifiedContent = modifiedContent.replace(new RegExp(key, "g"), value);
     }
   });
-  // if(fileModified) {
-  //   modifiedFilePath.push(path);
-  //   console.log("**** Here are the list of modified paths ****", modifiedFilePath);
-  //   console.log("**** Length of modified paths ****", modifiedFilePath.length);
-  // }
+  if(fileModified) {
+    modifiedFilePath.push(path);
+  }
   return { jsContent: modifiedContent, fileModified };
 }
 
@@ -57,7 +54,6 @@ const handleHtmlFile = (html, path) => {
     const element = $(this);
     const attribute = element.attr();
     if (attribute.src && crayonsLink[attribute.src]) {
-      $(this).attr("src", crayonsLink[attribute.src]);
       fileModified = true;
     }
   });
@@ -65,40 +61,15 @@ const handleHtmlFile = (html, path) => {
     const element = $(this);
     const attribute = element.attr();
     if (attribute.href && crayonsLink[attribute.href]) {
-      $(this).attr("href", crayonsLink[attribute.href]);
       fileModified = true;
     }
   });
-  // if(fileModified) {
-  //   modifiedFilePath.push(path);
-  //   console.log("**** Here are the list of modified paths ****", modifiedFilePath);
-  //   console.log("**** Length of modified paths ****", modifiedFilePath.length);
-  // }
+  if(fileModified) {
+    modifiedFilePath.push(path);
+  }
   return { htmlContent: $.html(), fileModified };
 }
 
-/**
- * This is used to upload the modified file in the s3 bucket.
- * @param {String} path 
- * @param {String} fileContent 
- * @param {String} contentType 
-*/
-const putObject = async (path, fileContent, contentType) => {
-  try {
-    const putObjectCommand = configs.putObjectCommandAws(path, fileContent, contentType);
-    const putResponse = await client.send(putObjectCommand);
-    if(putResponse.$metadata.httpStatusCode === 200) {
-      console.log(`**** Successfully uploaded the modified file in the path: ${path} ****`);
-      modifiedFilePath.push(path);
-      console.log("**** Here are the list of modified paths ****", modifiedFilePath);
-      console.log("**** Length of modified paths ****", modifiedFilePath.length);
-    }
-  }
-  catch(error) {
-    console.log(`**** Error while uploading the file: ${path} ****`);
-    throw new Error(error);
-  }
-}
 
 const getObject = async (Contents) => {
   return new Promise((resolve, reject) => {
@@ -112,11 +83,7 @@ const getObject = async (Contents) => {
             const file = await client.send(getObjectCommand);
             const contentType = file.ContentType;
             const fileContent = await file.Body.transformToString();
-            const { htmlContent, fileModified } = handleHtmlFile(fileContent, path);
-            if(fileModified) {
-              console.log(`**** Verified the HTML file Path: ${path} and modified the crayons link Successfully ****`);
-              await putObject(path, htmlContent, contentType);
-            }
+            handleHtmlFile(fileContent, path);
           }
           if(
               (path.endsWith(".js") || path.endsWith(".jsx") || path.endsWith(".ts") || path.endsWith(".tsx") || path.endsWith(".vue")) &&
@@ -125,11 +92,7 @@ const getObject = async (Contents) => {
             const file = await client.send(getObjectCommand);
             const contentType = file.ContentType;
             const fileContent = await file.Body.transformToString();
-            const { jsContent, fileModified } = handleJsFile(fileContent, path);
-            if(fileModified) {
-              console.log(`**** Verified the JS file Path: ${path} and modified the crayons link Successfully ****`);
-              await putObject(path, jsContent, contentType);
-            }
+            handleJsFile(fileContent, path);
           }
         }
         catch(error) {
@@ -152,6 +115,12 @@ const getObject = async (Contents) => {
   })
 }
 
+const printModifiedList = () => {
+  for(let i = 0; i < modifiedFilePath.length; i++) {
+    console.log(`"${modifiedFilePath[i]}",`);
+  }
+}
+
 /**
  * This will get list of objects in the bucket.
  * while loop will run until we finish reading all the objects from the bucket. 
@@ -168,12 +137,14 @@ const getS3ObjectsInBucket = async () => {
       listObjectsV2Command.input.ContinuationToken = NextContinuationToken;
     }
     console.log(`**** ${batch} batches has been successfully completed ****`);
-    console.log("**** Here are the list of modified paths ****", modifiedFilePath);
+    console.log("**** Here are the list of modified paths ****");
+    printModifiedList();
     console.log("**** Length of modified paths ****", modifiedFilePath.length);
   }
   catch(error) {
     console.log("**** Error in getS3ObjectInBucket function ****", error);
-    console.log("**** Here are the list of modified file paths ****", modifiedFilePath);
+    console.log("**** Here are the list of modified file paths ****");
+    printModifiedList();
     console.log("**** Length of modified paths ****", modifiedFilePath.length);
   }
 }
