@@ -190,7 +190,12 @@ const getObject = async (Contents) => {
 
 const printFinalList = () => {
   for(let i = 0; i < modifiedBackupPath.length; i++) {
-    console.log(`${modifiedBackupPath[i]},`);
+    console.log(`
+{
+  backupPath: ${modifiedBackupPath[i].backupPath},
+  originalPath: ${modifiedBackupPath[i].originalPath},
+},
+    `);
   }
   console.log("**** length ****", modifiedBackupPath.length);
 }

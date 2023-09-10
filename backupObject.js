@@ -51,7 +51,7 @@ const getObject = async (Contents) => {
         const getBackupObjectCommand = configs.getObjectCommandAws(backupPath);
         const getOriginalObjectCommand = configs.getObjectCommandAws(originalPath);
 
-        if(path.endsWith(".html")) {
+        if(originalPath.endsWith(".html")) {
           // get the backup file
           const backupHtmlFile = await client.send(getBackupObjectCommand);
 
@@ -67,7 +67,7 @@ const getObject = async (Contents) => {
           // Uploading the backup content in the original path.
           await putObject(originalPath, backupHtmlContent, contentType);
         }
-        if(path.endsWith(".js")) {
+        if(originalPath.endsWith(".js")) {
 
           // get the backup file
           const backupJsFile = await client.send(getBackupObjectCommand);
